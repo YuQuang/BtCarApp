@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">GitExample</string>
+    <string name="sampleText">Hi</string>
+    <string name="sendBtn">Send</string>
+    <string name="okBtn">Ok</string>
+    <string name="placeHolder">Please input something</string>
+    <string name="homeImageDescription">Just an Image</string>
 </resources>
