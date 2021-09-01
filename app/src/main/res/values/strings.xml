@@ -1,8 +1,14 @@
 <resources>
     <string name="app_name">GitExample</string>
-    <string name="sampleText">Hi</string>
-    <string name="sendBtn">Send</string>
-    <string name="okBtn">Ok</string>
-    <string name="placeHolder">Please input something</string>
-    <string name="homeImageDescription">Just an Image</string>
+    <string name="scanListTitle">裝置清單</string>
+    <string name="scanBtn">開始掃描</string>
+    <string name="homeImageDescription">圖片</string>
+    <string name="forward">前</string>
+    <string name="back">後</string>
+    <string name="left">左</string>
+    <string name="right">右</string>
+    <string name="lastPage">返回</string>
+    <string name="nowState">當前連線狀態</string>
+    <string name="cancel">取消</string>
+    <string name="loadingText">加載中...</string>
 </resources>

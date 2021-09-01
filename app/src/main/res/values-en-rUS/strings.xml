@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GitExample</string>
+    <string name="scanListTitle">Devices List</string>
+    <string name="scanBtn">Scan</string>
+    <string name="homeImageDescription">Picture</string>
+    <string name="forward">forward</string>
+    <string name="back">back</string>
+    <string name="left">left</string>
+    <string name="right">right</string>
+    <string name="lastPage">back</string>
+    <string name="nowState">State</string>
+    <string name="cancel">Cancel</string>
+    <string name="loadingText">loading...</string>
+</resources>
