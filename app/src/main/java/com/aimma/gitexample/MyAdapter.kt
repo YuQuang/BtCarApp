@@ -1,8 +1,6 @@
 package com.aimma.gitexample
 
-import android.util.Log
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.aimma.gitexample.databinding.ListItemBinding
@@ -12,21 +10,8 @@ class MyAdapter: RecyclerView.Adapter<MyAdapter.ViewHolder>() {
     private lateinit var dataList: ArrayList<BtInfo>
     private lateinit var cellClickListener: CellClickListener
 
-
     interface CellClickListener {
         fun onCellClickListener(data: BtInfo, position: Int)
-    }
-
-    inner class ViewHolder(listItemBinding: ListItemBinding): RecyclerView.ViewHolder(listItemBinding.root){
-        private val name = listItemBinding.btName
-        private val mac = listItemBinding.btMac
-        private val rrsi = listItemBinding.btRRSI
-
-        fun bind(data: BtInfo) {
-            name.text = data.getBtDeviceName()
-            mac.text = data.getBtDeviceAddress()
-            rrsi.text = data.getBtDeviceRRSI().toString()
-        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -51,5 +36,18 @@ class MyAdapter: RecyclerView.Adapter<MyAdapter.ViewHolder>() {
     }
     fun setCellClickListener(cellClickListener: CellClickListener){
         this.cellClickListener = cellClickListener
+    }
+
+    // 處理如何顯示每項內容類別
+    inner class ViewHolder(listItemBinding: ListItemBinding): RecyclerView.ViewHolder(listItemBinding.root){
+        private val name = listItemBinding.btName
+        private val mac = listItemBinding.btMac
+        private val rrsi = listItemBinding.btRRSI
+
+        fun bind(data: BtInfo) {
+            name.text = data.getBtDeviceName()
+            mac.text = data.getBtDeviceAddress()
+            rrsi.text = data.getBtDeviceRRSI().toString()
+        }
     }
 }

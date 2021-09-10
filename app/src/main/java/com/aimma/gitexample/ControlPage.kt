@@ -144,7 +144,7 @@ class ControlPage : AppCompatActivity() {
      */
     inner class PictureThread(private var handler: MyHandler): Thread(){
         private var text: String? = null
-        private val host: String = "10.10.11.166"
+        private val host: String = "10.10.10.87"
         private val port: Int = 65432
 
         override fun run() {
