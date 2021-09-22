@@ -3,8 +3,7 @@ package com.aimma.gitexample
 import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.content.Context
-import android.content.Intent
-import android.graphics.BitmapFactory
+import android.graphics.*
 import android.os.*
 import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
@@ -19,7 +18,6 @@ import java.lang.ref.WeakReference
 import java.net.Socket
 import java.util.*
 import android.os.Looper
-import java.net.SocketAddress
 
 
 class ControlPage : AppCompatActivity() {
@@ -30,6 +28,7 @@ class ControlPage : AppCompatActivity() {
     private var connectThread: Thread? = null
     private var pictureThread: Thread? = null
     private var socket: Socket? = null
+    private var trackingServerSocket: Socket? = null
     private var myUUID: UUID = UUID.fromString("192770fa-4a48-4acd-8b37-f9716c2c7899")
     private val mGattCallback: BluetoothGattCallback = object: BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -142,19 +141,26 @@ class ControlPage : AppCompatActivity() {
     /**
      * WIFI連線線程
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     inner class PictureThread(private var handler: MyHandler): Thread(){
         private var text: String? = null
+        private val encoder = Base64.getEncoder()
         private val host: String = "10.10.10.87"
         private val port: Int = 65432
+        private val trackingServerHost: String = "10.10.131.127"
+        private val trackingServerport: Int = 8000
 
         override fun run() {
             try{
                 socket = Socket(host, port)
+                trackingServerSocket = Socket(trackingServerHost, trackingServerport)
                 val input = socket?.getInputStream()
                 val reader = BufferedReader(InputStreamReader(input))
                 text = reader.readLine()
                 while (text != null) {
                     val msg = Message()
+                    trackingServerSocket?.getOutputStream()?.write((text?.length.toString() + "\n").toByteArray())
+                    trackingServerSocket?.getOutputStream()?.write(text?.toByteArray())
                     msg.data.putString("data", text)
                     handler.sendMessage(msg)
                     text = reader.readLine()
@@ -162,6 +168,16 @@ class ControlPage : AppCompatActivity() {
             }catch (e: Exception){
 
             }
+        }
+    }
+
+    /**
+     * 連線至物件追蹤伺服器
+     */
+    inner class PictureTrackingThread(): Thread(){
+        override fun run() {
+            super.run()
+
         }
     }
 
@@ -193,9 +209,14 @@ class ControlPage : AppCompatActivity() {
         private var activity: WeakReference<ControlPage>? = null
         private val v = activityControlPageLandscapeBinding.picView
         private val decoder = Base64.getDecoder()
+        private val p = Paint()
+
 
         init {
             this.activity = WeakReference(activity)
+            p.strokeWidth = 2f
+            p.color = Color.RED
+            p.style = Paint.Style.STROKE
         }
 
         override fun handleMessage(msg: Message) {
@@ -203,7 +224,10 @@ class ControlPage : AppCompatActivity() {
             val text = msg.data.getString("data")
             val code = decoder.decode(text)
             val pic = BitmapFactory.decodeByteArray(code, 0, code.count())
-            v.setImageBitmap(pic)
+            val mutableBitmap = pic.copy(Bitmap.Config.ARGB_8888, true)
+            val rect = Canvas(mutableBitmap)
+            rect.drawRect(10f, 10f, 50f, 50f, p)
+            v.setImageBitmap(mutableBitmap)
         }
     }
 
