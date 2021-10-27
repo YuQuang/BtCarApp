@@ -144,10 +144,9 @@ class ControlPage : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     inner class PictureThread(private var handler: MyHandler): Thread(){
         private var text: String? = null
-        private val encoder = Base64.getEncoder()
-        private val host: String = "10.10.10.87"
+        private val host: String = "10.10.11.79"
         private val port: Int = 65432
-        private val trackingServerHost: String = "10.10.131.127"
+        private val trackingServerHost: String = "10.10.11.182"
         private val trackingServerport: Int = 8000
 
         override fun run() {
