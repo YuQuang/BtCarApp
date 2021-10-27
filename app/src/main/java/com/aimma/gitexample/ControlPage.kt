@@ -27,18 +27,20 @@ class ControlPage : AppCompatActivity() {
     private var mBluetoothGatt: BluetoothGatt? = null
     private var connectThread: Thread? = null
     private var pictureThread: Thread? = null
+    private var pictureTrackingThread: Thread? = null
     private var socket: Socket? = null
     private var trackingServerSocket: Socket? = null
+    private var text: String = "none"
     private var myUUID: UUID = UUID.fromString("192770fa-4a48-4acd-8b37-f9716c2c7899")
     private val mGattCallback: BluetoothGattCallback = object: BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 gatt.readRemoteRssi()
             }
-            else if (newState == BluetoothProfile.STATE_DISCONNECTED) {}
+            else if(newState == BluetoothProfile.STATE_DISCONNECTED){}
         }
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-            if (status == BluetoothGatt.GATT_SUCCESS) { }
+            if(status == BluetoothGatt.GATT_SUCCESS){ }
             else {
                 Log.d("GG", "onServicesDiscovered received: $status");
             }
@@ -143,23 +145,22 @@ class ControlPage : AppCompatActivity() {
      */
     @RequiresApi(Build.VERSION_CODES.O)
     inner class PictureThread(private var handler: MyHandler): Thread(){
-        private var text: String? = null
         private val host: String = "10.10.11.79"
         private val port: Int = 65432
-        private val trackingServerHost: String = "10.10.11.182"
-        private val trackingServerport: Int = 8000
 
         override fun run() {
             try{
+                Log.d("Net", "Starting Connect to Raspi")
                 socket = Socket(host, port)
-                trackingServerSocket = Socket(trackingServerHost, trackingServerport)
                 val input = socket?.getInputStream()
                 val reader = BufferedReader(InputStreamReader(input))
+
                 text = reader.readLine()
-                while (text != null) {
+                Log.d("Net", "Get Data")
+                pictureTrackingThread = PictureTrackingThread()
+                pictureTrackingThread?.start()
+                while (true) {
                     val msg = Message()
-                    trackingServerSocket?.getOutputStream()?.write((text?.length.toString() + "\n").toByteArray())
-                    trackingServerSocket?.getOutputStream()?.write(text?.toByteArray())
                     msg.data.putString("data", text)
                     handler.sendMessage(msg)
                     text = reader.readLine()
@@ -174,9 +175,28 @@ class ControlPage : AppCompatActivity() {
      * 連線至物件追蹤伺服器
      */
     inner class PictureTrackingThread(): Thread(){
+        private val trackingServerHost: String = "10.10.11.182"
+        private val trackingServerPort: Int = 8000
+
         override fun run() {
             super.run()
+            Log.d("Net", "Starting Connect to TrackingServer")
+            trackingServerSocket = Socket(trackingServerHost, trackingServerPort)
+            val reader = BufferedReader(InputStreamReader(trackingServerSocket?.getInputStream()))
 
+            var msg = text
+            Log.d("Net", "Text Len = " + msg.length.toString())
+            trackingServerSocket?.getOutputStream()?.write((msg.length.toString() + "\n").toByteArray())
+            trackingServerSocket?.getOutputStream()?.write(msg.toByteArray())
+            Log.d("Net", "Send to TrackingServer")
+            var ok = reader.readLine()
+            Log.d("Net", "Received from TrackingServer")
+            while(ok != null){
+                msg = text
+                trackingServerSocket?.getOutputStream()?.write((msg.length.toString() + "\n").toByteArray())
+                trackingServerSocket?.getOutputStream()?.write(msg.toByteArray())
+                ok = reader.readLine()
+            }
         }
     }
 
