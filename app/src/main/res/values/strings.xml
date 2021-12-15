@@ -10,5 +10,9 @@
     <string name="lastPage">返回</string>
     <string name="nowState">當前連線狀態</string>
     <string name="cancel">取消</string>
-    <string name="loadingText">加載中...</string>
+    <string name="loadingText">加載中…</string>
+    <string name="ipEditTextHintText">IP位置</string>
+    <string name="okText">OK</string>
+    <string name="wifiHintText">或者使用WiFi</string>
+    <string name="streamVideo">StreamVideo</string>
 </resources>

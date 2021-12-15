@@ -10,20 +10,23 @@ import android.content.*
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.aimma.gitexample.databinding.ActivityMainBinding
+import java.lang.Exception
 import java.util.*
 
-class MainActivity : AppCompatActivity(), MyAdapter.CellClickListener {
+class MainActivity : AppCompatActivity(), MyAdapter.CellClickListener{
     private val mData: ArrayList<BtInfo> = ArrayList()
     private lateinit var activityMainBinding: ActivityMainBinding
     private var bluetoothAdapter: BluetoothAdapter? = null
     private val adapter = MyAdapter()
-    private val mReceiver = object : BroadcastReceiver() // 偵測藍芽狀態改變
-    {
+
+    // 偵測藍芽狀態改變
+    private val mReceiver = object : BroadcastReceiver(){
         override fun onReceive (context: Context, intent: Intent) {
             when(intent.action) {
                 BluetoothAdapter.ACTION_STATE_CHANGED -> {
@@ -34,7 +37,6 @@ class MainActivity : AppCompatActivity(), MyAdapter.CellClickListener {
             }
         }
     }
-
 
     // 布局以及將 Adapter 綁定到 RecycleView
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,6 +97,7 @@ class MainActivity : AppCompatActivity(), MyAdapter.CellClickListener {
                 })
             }
         }
+        activityMainBinding.wifiConnectBtn.setOnClickListener(WifiConnectBtnListener())
 
         /**
          * 檢查設備是否支援藍芽功能
@@ -108,6 +111,7 @@ class MainActivity : AppCompatActivity(), MyAdapter.CellClickListener {
          */
         registerReceiver(mReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
     }
+
     // 處理權限部分以及綁定 Receiver 事件
     override fun onStart(){
         super.onStart()
@@ -148,19 +152,53 @@ class MainActivity : AppCompatActivity(), MyAdapter.CellClickListener {
             )
         )
     }
+
     override fun onPause() {
         super.onPause()
         Log.d("GG", "Pause")
     }
+
     override fun onStop() {
         super.onStop()
         Log.d("GG", "Stop")
     }
+
     // 取消註冊 receiver 、藍芽發現新裝置
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(mReceiver)
         bluetoothAdapter?.cancelDiscovery()
+    }
+
+    inner class WifiConnectBtnListener: View.OnClickListener{
+        // WiFi連線按鈕被按下時
+        override fun onClick(p0: View?) {
+            if (validIP(activityMainBinding.ipAddrEditText.text.toString())) {
+                try {
+                    val intent = Intent()
+                    intent.setClass(this@MainActivity, WiFiControlPage::class.java)
+                    intent.putExtra("deviceIP", activityMainBinding.ipAddrEditText.text.toString())
+                    startActivity(intent)
+                }catch(e: java.lang.IllegalArgumentException){
+                        Log.e("GG", "IP invalid")
+                }
+            }else Toast.makeText(this@MainActivity, "Invalid ip", Toast.LENGTH_SHORT).show()
+        }
+
+        // 檢查IP是否正確
+        private fun validIP(ip: String): Boolean {
+            if(ip.count { it == '.' } == 3){
+                for (number in ip.split('.')){
+                    try {
+                        val i = number.toInt()
+                        if (i !in 0..255 || number != i.toString()) return false
+                    }catch (e: Exception){
+                        return false
+                    }
+                }
+                return true
+            }else return false
+        }
     }
 
     /**
