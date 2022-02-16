@@ -19,7 +19,9 @@ class LoadingDialog(activity: Activity) {
     }
 
     fun startLoadingDialog(){
-        alertDialog?.show()
+        if (alertDialog?.isShowing == false){
+            alertDialog?.show()
+        }
     }
 
     fun dismiss(){
