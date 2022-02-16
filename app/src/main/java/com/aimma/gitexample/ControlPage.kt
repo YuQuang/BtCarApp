@@ -152,7 +152,7 @@ class ControlPage : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     inner class PictureThread(private var handler: MyHandler): Thread(){
         // IP & Port參數設定
-        private val host: String = "10.10.11.79"
+        private val host: String = "10.10.11.212"
         private val port: Int = 65432
 
         override fun run() {
@@ -199,7 +199,7 @@ class ControlPage : AppCompatActivity() {
                 trackingServerSocket?.getOutputStream()?.write((msg.length.toString() + "\n").toByteArray())
                 trackingServerSocket?.getOutputStream()?.write(msg.toByteArray())
                 ok = reader.readLine()
-                result = JSONTokener(ok).nextValue() as JSONArray
+//                result = JSONTokener(ok).nextValue() as JSONArray
             }
         }
     }

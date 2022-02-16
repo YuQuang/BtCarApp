@@ -22,28 +22,41 @@ class WiFiControlPage : AppCompatActivity() {
     private var loadingDialog: LoadingDialog? = null                                         // 嘗試連線時顯示的 LoadingDialog
     private lateinit var activityWifiControlPageBinding: ActivityWifiControlPageBinding
     private var wifiSocket: Socket? = null
-    private var trackingServerSocket: Socket? = null
     private lateinit var wifiThread: WifiThread
+    private var trackingServerSocket: Socket? = null
     private var pictureTrackingThread: PictureTrackingThread? = null
+    private var pictureSocket: Socket? = null
+    private var pictureThread: PictureThread? = null
     private var base64CodedPic: String = "none"                                               // 樹梅派傳來編碼過的圖片 (JPEG)
     private var result: JSONArray? = null                                                     // 物件追蹤判斷結果
 
     override fun onDestroy(){
         super.onDestroy()
         wifiThread.interrupt()
-        wifiSocket?.close()
+        pictureThread?.interrupt()
         pictureTrackingThread?.interrupt()
         trackingServerSocket?.close()
+        pictureSocket?.close()
+        wifiSocket?.close()
     }
 
     // 若按返回則取消連線，並返回上一頁
     override fun onBackPressed() {
         super.onBackPressed()
         if(wifiThread.isAlive){
+            wifiSocket?.close()
             wifiThread.interrupt()
-            loadingDialog?.dismiss()
-            finish()
         }
+        if(pictureThread?.isAlive == true){
+            pictureSocket?.close()
+            pictureThread?.interrupt()
+        }
+        if(pictureTrackingThread?.isAlive == true){
+            trackingServerSocket?.close()
+            pictureTrackingThread?.interrupt()
+        }
+        loadingDialog?.dismiss()
+        finish()
     }
 
 
@@ -70,19 +83,24 @@ class WiFiControlPage : AppCompatActivity() {
         activityWifiControlPageBinding.forwardBtn.setOnTouchListener(BtnTouchListener("forward"))
         activityWifiControlPageBinding.leftBtn.setOnTouchListener(BtnTouchListener("left"))
         activityWifiControlPageBinding.rightBtn.setOnTouchListener(BtnTouchListener("right"))
+        activityWifiControlPageBinding.lastPageBtn.setOnClickListener { onBackPressed() }
 
         wifiThread  = WifiThread(intent.getStringExtra("deviceIP").toString(), 8000, MyHandler(this))
         wifiThread.start()
+
     }
 
     /**
      * 與樹梅派連線
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     inner class WifiThread(private var ip: String, private var port: Int, private var handler: MyHandler): Thread() {
         override fun run(){
             try{
                 wifiSocket = Socket(ip, port)                           // 嘗試連線至樹梅派
                 loadingDialog?.dismiss()
+                pictureThread = PictureThread(MyHandler(this@WiFiControlPage))
+                pictureThread?.start()
                 val input = wifiSocket?.getInputStream()                // 取得輸入流
                 val reader = BufferedReader(InputStreamReader(input))   // 創建輸入緩衝讀取區
 
@@ -96,7 +114,39 @@ class WiFiControlPage : AppCompatActivity() {
                     base64CodedPic = reader.readLine()
                 }
             }catch (e: Exception){
-                Log.d("Net", "Error while connecting to the RasPi")
+                Log.d("WiFiThread", e.toString())
+            }
+        }
+    }
+
+    /**
+     * 連線至樹梅派接收圖片
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    inner class PictureThread(private var handler: MyHandler): Thread(){
+        // IP & Port參數設定
+        private val host: String = "10.10.11.212"
+        private val port: Int = 65432
+
+        override fun run() {
+            try{
+                Log.i("PictureThread", "Starting to connect $host $port")
+                pictureSocket = Socket(host, port)                             // 嘗試連線至樹梅派
+                Log.i("PictureThread", "Connected to $host $port")
+                val input = pictureSocket?.getInputStream()                    // 取得輸入流
+                val reader = BufferedReader(InputStreamReader(input))   // 創建輸入緩衝讀取區
+
+                base64CodedPic = reader.readLine()                      // 從緩衝區讀取一行 (此為一張編碼過的圖片)
+                pictureTrackingThread = PictureTrackingThread()         // 開始追蹤線程
+                pictureTrackingThread?.start()
+                while (true) {                                          // 持續從樹梅派圖片
+                    val msg = Message()
+                    msg.data.putString("data", base64CodedPic)
+                    handler.sendMessage(msg)
+                    base64CodedPic = reader.readLine()
+                }
+            }catch (e: Exception){
+                Log.d("PictureThread", e.toString())
             }
         }
     }
@@ -111,20 +161,33 @@ class WiFiControlPage : AppCompatActivity() {
 
         override fun run() {
             super.run()
-            trackingServerSocket = Socket(trackingServerHost, trackingServerPort)                           // 開始連線至伺服器
-            val reader = BufferedReader(InputStreamReader(trackingServerSocket?.getInputStream()))          // 取得輸入流
+            try {
+                trackingServerSocket = Socket(
+                    trackingServerHost,
+                    trackingServerPort
+                )                           // 開始連線至伺服器
+                val reader =
+                    BufferedReader(InputStreamReader(trackingServerSocket?.getInputStream()))          // 取得輸入流
 
-            var msg = base64CodedPic                                                                        // 取得當前圖片
-            trackingServerSocket?.getOutputStream()?.write((msg.length.toString() + "\n").toByteArray())    // 傳送圖片資料總長度
-            trackingServerSocket?.getOutputStream()?.write(msg.toByteArray())                               // 傳送圖片
+                var msg =
+                    base64CodedPic                                                                        // 取得當前圖片
+                trackingServerSocket?.getOutputStream()
+                    ?.write((msg.length.toString() + "\n").toByteArray())    // 傳送圖片資料總長度
+                trackingServerSocket?.getOutputStream()
+                    ?.write(msg.toByteArray())                               // 傳送圖片
 
-            var ok = reader.readLine()                                                                      // 接收伺服器回傳結果
-            while(ok != null){                                                                              // 持續傳送圖片並接收辨識結果
-                msg = base64CodedPic
-                trackingServerSocket?.getOutputStream()?.write((msg.length.toString() + "\n").toByteArray())
-                trackingServerSocket?.getOutputStream()?.write(msg.toByteArray())
-                ok = reader.readLine()
-                result = JSONTokener(ok).nextValue() as JSONArray
+                var ok =
+                    reader.readLine()                                                                      // 接收伺服器回傳結果
+                while (ok != null) {                                                                              // 持續傳送圖片並接收辨識結果
+                    msg = base64CodedPic
+                    trackingServerSocket?.getOutputStream()
+                        ?.write((msg.length.toString() + "\n").toByteArray())
+                    trackingServerSocket?.getOutputStream()?.write(msg.toByteArray())
+                    ok = reader.readLine()
+//                    result = JSONTokener(ok).nextValue() as JSONArray
+                }
+            }catch (e: Exception){
+                Log.e("TrackingThread", e.toString())
             }
         }
     }
@@ -180,18 +243,23 @@ class WiFiControlPage : AppCompatActivity() {
         override fun onTouch(p0: View?, p1: MotionEvent?): Boolean {
             when(p1?.action){
                 MotionEvent.ACTION_UP->{
-//                    wifiSocket.outputStream?.write("stop".toByteArray())
-//                    wifiSocket.outputStream?.flush()
+                    sendMsg("Stop")
                     Log.i("GG", "Stop")
                     p0?.performClick()
                 }
                 MotionEvent.ACTION_DOWN->{
-//                    wifiSocket.outputStream?.write(command.toByteArray())
-//                    wifiSocket.outputStream?.flush()
+                    sendMsg(command)
                     Log.i("GG", command)
                 }
             }
             return p0?.onTouchEvent(p1) ?: false
+        }
+
+        fun sendMsg(data: String){
+            Thread{
+                wifiSocket?.outputStream?.write(data.toByteArray())
+                wifiSocket?.outputStream?.flush()
+            }.start()
         }
     }
 }
