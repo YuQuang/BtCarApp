@@ -7,6 +7,9 @@ import android.os.*
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
+import android.view.animation.ScaleAnimation
 import androidx.appcompat.app.AppCompatActivity
 import com.aimma.gitexample.databinding.ActivityWifiControlPageBinding
 import org.json.JSONArray
@@ -83,11 +86,13 @@ class WiFiControlPage : AppCompatActivity() {
         activityWifiControlPageBinding.forwardBtn.setOnTouchListener(BtnTouchListener("forward"))
         activityWifiControlPageBinding.leftBtn.setOnTouchListener(BtnTouchListener("left"))
         activityWifiControlPageBinding.rightBtn.setOnTouchListener(BtnTouchListener("right"))
+        activityWifiControlPageBinding.wakeBtn.setOnTouchListener(BtnTouchListener("listen"))
         activityWifiControlPageBinding.lastPageBtn.setOnClickListener { onBackPressed() }
 
         wifiThread  = WifiThread(intent.getStringExtra("deviceIP").toString(), 8000, MyHandler(this))
         wifiThread.start()
 
+        activityWifiControlPageBinding.ipText.text = intent.getStringExtra("deviceIP").toString()
     }
 
     /**
@@ -176,15 +181,13 @@ class WiFiControlPage : AppCompatActivity() {
                 trackingServerSocket?.getOutputStream()
                     ?.write(msg.toByteArray())                               // 傳送圖片
 
-                var ok =
-                    reader.readLine()                                                                      // 接收伺服器回傳結果
+                var ok = reader.readLine()                                                                      // 接收伺服器回傳結果
                 while (ok != null) {                                                                              // 持續傳送圖片並接收辨識結果
                     msg = base64CodedPic
-                    trackingServerSocket?.getOutputStream()
-                        ?.write((msg.length.toString() + "\n").toByteArray())
+                    trackingServerSocket?.getOutputStream()?.write((msg.length.toString() + "\n").toByteArray())
                     trackingServerSocket?.getOutputStream()?.write(msg.toByteArray())
                     ok = reader.readLine()
-//                    result = JSONTokener(ok).nextValue() as JSONArray
+                    result = JSONTokener(ok).nextValue() as JSONArray
                 }
             }catch (e: Exception){
                 Log.e("TrackingThread", e.toString())
@@ -245,11 +248,31 @@ class WiFiControlPage : AppCompatActivity() {
                 MotionEvent.ACTION_UP->{
                     sendMsg("Stop")
                     Log.i("GG", "Stop")
+                    val animation = ScaleAnimation(
+                            1.2f,
+                            1.0f,
+                            1.2f,
+                            1.0f,
+                            Animation.RELATIVE_TO_SELF, 0.5f,
+                            Animation.RELATIVE_TO_SELF, 0.5f)
+                    animation.duration = 10
+                    animation.fillAfter = true
+                    p0?.startAnimation(animation)
                     p0?.performClick()
                 }
                 MotionEvent.ACTION_DOWN->{
                     sendMsg(command)
                     Log.i("GG", command)
+                    val animation = ScaleAnimation(
+                        1.0f,
+                        1.2f,
+                        1.0f,
+                        1.2f,
+                        Animation.RELATIVE_TO_SELF, 0.5f,
+                        Animation.RELATIVE_TO_SELF, 0.5f)
+                    animation.duration = 10
+                    animation.fillAfter = true
+                    p0?.startAnimation(animation)
                 }
             }
             return p0?.onTouchEvent(p1) ?: false
