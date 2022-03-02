@@ -130,7 +130,7 @@ class WiFiControlPage : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     inner class PictureThread(private var handler: MyHandler): Thread(){
         // IP & Port參數設定
-        private val host: String = "10.10.11.212"
+        private val host: String = "10.10.11.185"
         private val port: Int = 65432
 
         override fun run() {
