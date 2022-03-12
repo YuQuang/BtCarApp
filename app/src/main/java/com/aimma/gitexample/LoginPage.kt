@@ -56,7 +56,7 @@ class LoginPage: AppCompatActivity()
                 loginPageHandler.sendMessage(msg)
 
                 // 設定連線網址以及連線設定
-                val url = URL("https://192.168.1.134/appLogin/")
+                val url = URL( Namespace.webAPIUrl + "/appLogin/")
                 val connect: HttpsURLConnection = url.openConnection() as HttpsURLConnection
 
                 // 憑證設定並導入憑證

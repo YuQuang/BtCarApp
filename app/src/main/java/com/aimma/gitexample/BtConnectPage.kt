@@ -6,19 +6,23 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.aimma.gitexample.databinding.ActivityBtconnectPageBinding
+import com.google.android.material.snackbar.Snackbar
 import java.lang.Exception
 import java.util.ArrayList
 
@@ -68,11 +72,19 @@ class BtConnectPage:
             when(intent.action) {
                 BluetoothAdapter.ACTION_STATE_CHANGED -> {
                     if(intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1) == BluetoothAdapter.STATE_OFF){
-                        Toast.makeText( context, "請打開藍芽", Toast.LENGTH_SHORT).show()
+                        Snackbar.make( this@BtConnectPage.view!!, "請勿關閉藍芽", Snackbar.LENGTH_SHORT).show()
                     }
                 }
             }
         }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        /**
+         * 取得藍芽適配器
+         */
+        bluetoothAdapter = (context?.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
     }
 
     /**
@@ -82,38 +94,9 @@ class BtConnectPage:
      * - 取得藍芽 Adapter
      * - 註冊藍芽掃描後的事件
      */
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        /**
-         * 事件綁定
-         */
-        activityBtconnectPageBinding.scanBtn.setOnClickListener {
-            Toast.makeText(context, "Start discovering", Toast.LENGTH_SHORT).show()
-            bluetoothAdapter?.let {
-                it.bluetoothLeScanner.startScan(object: ScanCallback(){
-                    override fun onScanResult(callbackType: Int, result: ScanResult) {
-                        super.onScanResult(callbackType, result)
-                        val deviceName = result.device.name ?: "None"
-                        val deviceHardwareAddress = result.device.address ?: "None"
-
-                        if(mData.none { btInfo -> btInfo.deviceAddress == deviceHardwareAddress }){
-                            val connection = BtInfo(deviceName, deviceHardwareAddress, result.rssi)
-                            adapter.addData(connection)
-                            adapter.notifyItemInserted(mData.size - 1)
-                        }else {
-                            val btInfo: BtInfo =
-                                mData.filter { btInfo -> btInfo.deviceAddress == deviceHardwareAddress }[0]
-                            val index: Int = mData.indexOf(btInfo)
-                            mData[index].deviceRRSI = result.rssi
-                            mData[index].deviceName = result.device.name ?: "None"
-                            adapter.updateList(mData)
-                            adapter.notifyItemChanged(index)
-                        }
-                    }
-                })
-            }
-        }
-        activityBtconnectPageBinding.wifiConnectBtn.setOnClickListener(WifiConnectBtnListener)
 
         /**
          * RecycleView設定
@@ -126,9 +109,11 @@ class BtConnectPage:
         adapter.setCellClickListener(this)
 
         /**
-         * 取得藍芽適配器
+         * 檢查設備是否支援藍芽功能
          */
-        bluetoothAdapter = (context?.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+        if (bluetoothAdapter == null) {
+            Snackbar.make(this.view!!, "設備不支援藍芽功能", Snackbar.LENGTH_SHORT).show()
+        }
 
         /**
          * 將以連線過的設備添加到陣列裡
@@ -139,13 +124,6 @@ class BtConnectPage:
             mData.add(connection)
         }
 
-        /**
-         * 檢查設備是否支援藍芽功能
-         */
-        if (bluetoothAdapter == null) {
-            Toast.makeText(context, "設備不支援藍芽功能", Toast.LENGTH_SHORT).show()
-        }
-
         context!!.registerReceiver(mReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
     }
 
@@ -153,9 +131,50 @@ class BtConnectPage:
      * 布局初始化以及 Binding
      */
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-
         activityBtconnectPageBinding =
             ActivityBtconnectPageBinding.inflate(inflater, container, false)
+
+        /**
+         * 事件綁定
+         */
+        activityBtconnectPageBinding.scanBtn.setOnClickListener {
+            this.view?.let { Snackbar.make(it, "Start discovering", Snackbar.LENGTH_SHORT).show() }
+            try{
+                mData.clear()
+                val pairedDevices: Set<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
+                pairedDevices?.forEach { device ->
+                    val connection = BtInfo(device.name, device.address, -999)
+                    mData.add(connection)
+                }
+                bluetoothAdapter?.startDiscovery()
+                bluetoothAdapter?.let {
+                    it.bluetoothLeScanner.startScan( object: ScanCallback(){
+                        override fun onScanResult(callbackType: Int, result: ScanResult) {
+                            super.onScanResult(callbackType, result)
+                            val deviceName = result.device.name ?: "None"
+                            val deviceHardwareAddress = result.device.address ?: "None"
+
+                            if(mData.none { btInfo -> btInfo.deviceAddress == deviceHardwareAddress }){
+                                val connection = BtInfo(deviceName, deviceHardwareAddress, result.rssi)
+                                adapter.addData(connection)
+                                adapter.notifyItemInserted(mData.size - 1)
+                            }else {
+                                val btInfo: BtInfo =
+                                    mData.filter { btInfo -> btInfo.deviceAddress == deviceHardwareAddress }[0]
+                                val index: Int = mData.indexOf(btInfo)
+                                mData[index].deviceRRSI = result.rssi
+                                mData[index].deviceName = result.device.name ?: "None"
+                                adapter.updateList(mData)
+                                adapter.notifyItemChanged(index)
+                            }
+                        }
+                    })
+                }
+            }catch (e: NullPointerException){
+                Snackbar.make(this.view!!, "藍芽沒開", Snackbar.LENGTH_SHORT).show()
+            }
+        }
+        activityBtconnectPageBinding.wifiConnectBtn.setOnClickListener(WifiConnectBtnListener)
 
         return activityBtconnectPageBinding.root
     }
@@ -230,6 +249,10 @@ class BtConnectPage:
      */
     override fun onCellClickListener(data: BtInfo, position: Int){
         try{
+            if(bluetoothAdapter?.isEnabled == false){
+                Snackbar.make(this.view!!, "請打開藍芽", Snackbar.LENGTH_SHORT).show()
+                return
+            }
             val intent = Intent()
             intent.setClass(context!!, ControlPage::class.java)
             intent.putExtra("deviceMac", data.deviceAddress)

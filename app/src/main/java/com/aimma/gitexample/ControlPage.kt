@@ -38,6 +38,7 @@ class ControlPage : AppCompatActivity() {
     /**
      * 管理藍芽連線狀態
      */
+    @SuppressLint("SetTextI18n")
     private val mGattCallback: BluetoothGattCallback = object: BluetoothGattCallback() {
 
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -48,7 +49,6 @@ class ControlPage : AppCompatActivity() {
             if(status != BluetoothGatt.GATT_SUCCESS) Log.d("GG", "onServicesDiscovered received: $status")
         }
 
-        @SuppressLint("SetTextI18n")
         override fun onReadRemoteRssi(gatt: BluetoothGatt, rssi: Int, status: Int) {
             super.onReadRemoteRssi(gatt, rssi, status)
             Handler(Looper.getMainLooper()).postDelayed({
@@ -56,7 +56,6 @@ class ControlPage : AppCompatActivity() {
                 mBluetoothGatt?.readRemoteRssi()
             }, 500)
         }
-
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -149,7 +148,6 @@ class ControlPage : AppCompatActivity() {
     /**
      * 連線至樹梅派接收圖片
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     inner class PictureThread(private var handler: MyHandler): Thread(){
         // IP & Port參數設定
         private val host: String = "10.10.11.212"
