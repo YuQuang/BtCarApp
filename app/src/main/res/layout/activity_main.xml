@@ -45,24 +45,22 @@
             <TextView
                 android:id="@+id/UserNameInfo"
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
+                android:layout_height="wrap_content"
                 android:textSize="24sp"
-                android:textColor="@color/black"
                 android:gravity="center"
                 android:text="Welcome User" />
             <TextView
                 android:id="@+id/UserGroupInfo"
                 android:layout_width="match_parent"
-                android:layout_height="24dp"
+                android:layout_height="wrap_content"
                 android:textSize="15sp"
                 android:gravity="center"
                 android:text="Guest" />
             <TextView
                 android:id="@+id/BtDeviceMac"
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
+                android:layout_height="wrap_content"
                 android:textSize="14sp"
-                android:textColor="@color/black"
                 android:gravity="center"
                 android:text="NoneConnectedYet" />
             <Button
@@ -72,6 +70,7 @@
                 android:layout_marginHorizontal="20dp"
                 android:layout_marginVertical="10dp"
                 android:gravity="center"
+                android:textColor="@color/white"
                 android:text="Log In" />
         </LinearLayout>
 

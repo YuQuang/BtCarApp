@@ -98,6 +98,7 @@ class ConnectPage: Fragment(R.layout.activity_connect) {
         savedInstanceState: Bundle?
     ): View {
         activityConnectBinding = ActivityConnectBinding.inflate(inflater, container, false)
+        activityConnectBinding.btConnectProgress.visibility = View.GONE
 
         return activityConnectBinding.root
     }
@@ -119,8 +120,20 @@ class ConnectPage: Fragment(R.layout.activity_connect) {
         )
     }
 
+    /**
+     * 連結按鈕被按下時
+     */
     private val btConnectBtnListener = View.OnClickListener {
-        (activity as MainActivity).btConnect("DC:A6:32:8D:1C:9B")
+        activityConnectBinding.btConnectProgress.visibility = View.VISIBLE
+        if(activityConnectBinding.btConnectProgress.visibility==View.VISIBLE) {
+            Thread {
+                (activity as MainActivity).btConnect(activityConnectBinding.btMacEdit.text.toString())
+                (activity as MainActivity).runOnUiThread {
+                    activityConnectBinding.btConnectProgress.visibility = View.GONE
+                }
+                Snackbar.make(activityConnectBinding.root, "Connect failed...", Snackbar.LENGTH_SHORT).show()
+            }.start()
+        }
     }
 
 }

@@ -17,6 +17,7 @@ import java.io.BufferedInputStream
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
+import java.net.SocketTimeoutException
 import java.net.URL
 import java.security.KeyStore
 import java.security.cert.Certificate
@@ -62,8 +63,16 @@ class Website:
         propertyAdapter.setSession(session)
         propertyAdapter.setCellClickListener(this)
         Thread{
-            // 取得資料
-            val rawJson = webAPIConnect(Namespace.webAPIUrl + "getData/", session)
+            var rawJson = ""
+            try{
+                // 取得資料
+                rawJson = webAPIConnect(Namespace.webAPIUrl + "getData/", session)
+            }catch(e: Exception){
+                Log.i("GG", e.toString())
+                activity?.runOnUiThread {
+                    activityWebsiteBinding.LoginHint.visibility = View.VISIBLE
+                }
+            }
             // 若 rawData 為空則跳過
             if(rawJson == "") return@Thread
             // 解析 RawData
@@ -127,6 +136,7 @@ class Website:
     {
         activityWebsiteBinding = ActivityWebsiteBinding.inflate(inflater, container, false)
 
+        activityWebsiteBinding.LoginHint.visibility = View.GONE
         // 設置RecyclerView為列表型態
         activityWebsiteBinding.propertyRecycleView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
         // 將資料交給adapter

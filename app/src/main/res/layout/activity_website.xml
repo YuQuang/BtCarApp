@@ -19,19 +19,20 @@
         app:layout_constraintHeight_percent="0.08"
         android:layout_margin="20dp">
 
-        <TextView
-            android:text="Search"
+        <ImageView
+            android:id="@+id/imageView5"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_weight="0.1"
             android:layout_gravity="center"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.4"/>
+            app:srcCompat="@drawable/search" />
 
         <EditText
             android:id="@+id/editTextTextPersonName2"
             android:layout_gravity="center"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="0.6"
+            android:layout_weight="0.9"
             android:ems="10"
             android:inputType="textPersonName"/>
 
@@ -46,6 +47,37 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/WebsiteSearchLinear" />
+
+    <LinearLayout
+        android:id="@+id/LoginHint"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="60dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingHorizontal="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/WebsiteSearchLinear">
+
+        <TextView
+            android:id="@+id/LoginTextHint1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="center"
+            android:background="@color/white40"
+            android:textSize="20sp"
+            android:text="Not Login Yet" />
+        <TextView
+            android:id="@+id/LoginTextHint2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="center"
+            android:background="@color/white40"
+            android:textSize="20sp"
+            android:text="Please Login First" />
+    </LinearLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

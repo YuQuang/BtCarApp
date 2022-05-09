@@ -18,10 +18,7 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedInputStream
-import java.io.BufferedReader
-import java.io.InputStream
-import java.io.InputStreamReader
+import java.io.*
 import java.net.URL
 import java.security.KeyStore
 import java.security.cert.Certificate
@@ -48,8 +45,11 @@ class MainActivity : AppCompatActivity()
     private var mBluetoothGatt: BluetoothGatt? = null                                         // 藍芽 Gatt
     private val mGattCallback: BluetoothGattCallback = object: BluetoothGattCallback() {
 
+        var keepRead = true
+
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) gatt.readRemoteRssi()
+            else if(newState == BluetoothProfile.STATE_DISCONNECTED) keepRead = false
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
@@ -59,8 +59,14 @@ class MainActivity : AppCompatActivity()
         override fun onReadRemoteRssi(gatt: BluetoothGatt, rssi: Int, status: Int) {
             super.onReadRemoteRssi(gatt, rssi, status)
             Handler(Looper.getMainLooper()).postDelayed({
+                if(rssi > -3){
+                    val output = OutputStreamWriter(mSocket?.outputStream)
+                    output.write("WakeUp\n")
+                    output.flush()
+                    output.close()
+                }
                 Log.d("GG", rssi.toString())
-                mBluetoothGatt?.readRemoteRssi()
+                if(keepRead) mBluetoothGatt?.readRemoteRssi()
             }, 500)
         }
     }
@@ -183,15 +189,25 @@ class MainActivity : AppCompatActivity()
         return true
     }
 
+    /**
+     * 藍芽連線部分
+     */
     fun btConnect(mac: String){
         try{
+            // 取得藍芽適配器
             bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
-            activityMainBinding.BtDeviceMac.text = mac
             val bluetoothManager: BluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
             val device = bluetoothManager.adapter.getRemoteDevice(mac)
             mSocket = device.createRfcommSocketToServiceRecord(myUUID)
             mSocket?.connect()
             mBluetoothGatt = device.connectGatt(this, false, mGattCallback)
+            runOnUiThread{
+                activityMainBinding.BtDeviceMac.text = mBluetoothGatt?.device?.address
+            }
+            val transaction = supportFragmentManager.beginTransaction()
+            val btFragment = BtConnectPage()
+            transaction.replace(activityMainBinding.fragmentContainerView.id, btFragment)
+            transaction.commitNowAllowingStateLoss()
         }catch(e: IllegalArgumentException){
             Log.e("GG", "In Main Activity, $e")
         }catch(e: Exception){

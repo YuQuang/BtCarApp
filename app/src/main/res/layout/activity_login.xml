@@ -46,6 +46,8 @@
         android:layout_marginTop="36dp"
         android:ems="10"
         android:hint="password"
+        android:backgroundTint="@color/black"
+        android:textColor="@color/black"
         android:inputType="textPassword"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.567"
@@ -59,6 +61,8 @@
         android:layout_marginTop="56dp"
         android:ems="10"
         android:hint="username"
+        android:backgroundTint="@color/black"
+        android:textColor="@color/black"
         android:inputType="textPersonName"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.562"
@@ -90,17 +94,19 @@
 
     <ImageView
         android:id="@+id/imageView3"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
-        android:layout_marginEnd="12dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="8dp"
         app:layout_constraintEnd_toStartOf="@+id/editTextTextPassword"
         app:layout_constraintTop_toTopOf="@+id/editTextTextPassword"
         app:srcCompat="@drawable/key" />
 
     <ImageView
         android:id="@+id/imageView4"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="12dp"
         app:layout_constraintEnd_toStartOf="@+id/editTextTextPersonName"
         app:layout_constraintTop_toTopOf="@+id/editTextTextPersonName"
